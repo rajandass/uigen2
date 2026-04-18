@@ -7,7 +7,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  AZURE_WEBAPP_NAME: uigen  # Set this to your Azure App Service name
+  AZURE_WEBAPP_NAME: uigen-app
 
 jobs:
   build:
@@ -24,20 +24,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/build
+
       - name: Build
         run: npm run build
         env:
-          # Provide a dummy DATABASE_URL so Prisma client can generate during build
           DATABASE_URL: postgresql://user:pass@localhost:5432/build
+
+      - name: Copy static assets into standalone
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: app
-          path: |
-            .next/standalone
-            .next/static
-            public
+          path: .next/standalone
 
   deploy:
     runs-on: ubuntu-latest
@@ -52,15 +58,10 @@ jobs:
         with:
           name: app
 
-      - name: Copy static assets into standalone
-        run: |
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
-
       - name: Deploy to Azure App Service
         id: deploy
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .next/standalone
+          package: .
