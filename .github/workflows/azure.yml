@@ -58,10 +58,13 @@ jobs:
         with:
           name: app
 
+      - name: Zip deployment package
+        run: zip -r deploy.zip .
+
       - name: Deploy to Azure App Service
         id: deploy
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
+          package: deploy.zip
