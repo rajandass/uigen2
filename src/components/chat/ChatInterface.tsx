@@ -1,15 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, FormEvent } from "react";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/lib/contexts/chat-context";
+import { AuthDialog } from "@/components/auth/AuthDialog";
 import { Bot } from "lucide-react";
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  user?: { id: string; email: string } | null;
+}
+
+export function ChatInterface({ user }: ChatInterfaceProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { messages, input, handleInputChange, handleSubmit, status } = useChat();
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
+  const guardedSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (!user) {
+      e.preventDefault();
+      setAuthDialogOpen(true);
+      return;
+    }
+    handleSubmit(e);
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -41,13 +56,23 @@ export function ChatInterface() {
         </ScrollArea>
       )}
       <div className="mt-4 flex-shrink-0">
+        {!user && (
+          <p className="text-center text-sm text-neutral-400 mb-2">
+            <button onClick={() => setAuthDialogOpen(true)} className="text-blue-500 hover:underline">Sign in</button> to generate components
+          </p>
+        )}
         <MessageInput
           input={input}
           handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
+          handleSubmit={guardedSubmit}
           isLoading={status === "submitted" || status === "streaming"}
         />
       </div>
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        defaultMode="signin"
+      />
     </div>
   );
 }

@@ -48,7 +48,7 @@ export function MainContent({ user, project }: MainContentProps) {
 
                 {/* Chat Content */}
                 <div className="flex-1 overflow-hidden">
-                  <ChatInterface />
+                  <ChatInterface user={user} />
                 </div>
               </div>
             </ResizablePanel>
