@@ -25,12 +25,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Project setup
+        env:
+          DATABASE_URL: "file:./dev.db"
+          JWT_SECRET: "ci-secret-for-testing-only"
         run: |
-          npm run setup
-          npm run dev:daemon
+          npm install
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run dev:daemon &
+          sleep 5
 
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
+        env:
+          DATABASE_URL: "file:./dev.db"
+          JWT_SECRET: "ci-secret-for-testing-only"
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
@@ -55,4 +64,4 @@ jobs:
               }
             }
 
-          allowed_tools: "Bash(npm:*),Bash(sqlite3:*),mcp__playwright__browser_snapshot,mcp__playwright__browser_click,..."
+          allowed_tools: "Bash(npm:*),Bash(sqlite3:*),Bash(cat:*),Bash(ls:*),Read,Write,Edit,Glob,Grep,mcp__playwright__browser_snapshot,mcp__playwright__browser_click,mcp__playwright__browser_navigate,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_type,mcp__playwright__browser_fill_form,mcp__playwright__browser_select_option,mcp__playwright__browser_hover,mcp__playwright__browser_wait_for,mcp__playwright__browser_console_messages,mcp__playwright__browser_network_requests,mcp__playwright__browser_press_key,mcp__playwright__browser_evaluate"
